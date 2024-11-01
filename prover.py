@@ -200,128 +200,127 @@ def applyImpliesRight(old_sequent, right_formula):
   new_sequent.right[right_formula.formula_b] = old_sequent.right[right_formula] + 1
   return new_sequent
 def proveSequent(sequent):
-  # reset the time for each formula in the sequent
-  for formula in sequent.left:
-    formula.setInstantiationTime(0)
-  for formula in sequent.right:
-    formula.setInstantiationTime(0)
+    # Сбрасываем время инстанциации для каждой формулы в секвенте
+    for formula in sequent.left:
+        formula.setInstantiationTime(0)
+    for formula in sequent.right:
+        formula.setInstantiationTime(0)
 
-  # sequents to be proven
-  frontier = [sequent]
-
-  # sequents which have been proven
-  proven = { sequent }
-
-  while True:
-    # get the next sequent
-    old_sequent = None
-    while len(frontier) > 0 and (old_sequent is None or old_sequent in proven):
-      old_sequent = frontier.pop(0)
-    if old_sequent is None:
-      break
-    print('%s. %s' % (old_sequent.depth, old_sequent))
-
-    # check if this sequent is axiomatically true without unification
-    if len(set(old_sequent.left.keys()) & set(old_sequent.right.keys())) > 0:
-      proven.add(old_sequent)
-      continue
-
-    # check if this sequent has unification terms
-    if old_sequent.siblings is not None:
-      # get the unifiable pairs for each sibling
-      sibling_pair_lists = [sequent.getUnifiablePairs()
-        for sequent in old_sequent.siblings]
-
-      # check if there is a unifiable pair for each sibling
-      if all([len(pair_list) > 0 for pair_list in sibling_pair_lists]):
-        # iterate through all simultaneous choices of pairs from each sibling
-        substitution = None
-        index = [0] * len(sibling_pair_lists)
-        while True:
-          # attempt to unify at the index
-          substitution = unify_list([sibling_pair_lists[i][index[i]]
-            for i in range(len(sibling_pair_lists))])
-          if substitution is not None:
-            break
-
-          # increment the index
-          pos = len(sibling_pair_lists) - 1
-          while pos >= 0:
-            index[pos] += 1
-            if index[pos] < len(sibling_pair_lists[pos]):
-              break
-            index[pos] = 0
-            pos -= 1
-          if pos < 0:
-            break
-        if substitution is not None:
-          for k, v in substitution.items():
-            print('  %s = %s' % (k, v))
-          proven |= old_sequent.siblings
-          frontier = [sequent for sequent in frontier
-            if sequent not in old_sequent.siblings]
-          continue
-      else:
-        # unlink this sequent
-        old_sequent.siblings.remove(old_sequent)
+    # Списки для хранения секвентов, которые нужно проверить и которые уже доказаны
+    frontier = [sequent]  # Секвенты для проверки
+    proven = { sequent }  # Секвенты, которые уже доказаны
 
     while True:
-      # determine which formula to expand
-      left_formula = None
-      left_depth = None
-      for formula, depth in old_sequent.left.items():
-        if left_depth is None or left_depth > depth:
-          if not isinstance(formula, Predicate):
-            left_formula = formula
-            left_depth = depth
-      right_formula = None
-      right_depth = None
-      for formula, depth in old_sequent.right.items():
-        if right_depth is None or right_depth > depth:
-          if not isinstance(formula, Predicate):
-            right_formula = formula
-            right_depth = depth
-      apply_left = False
-      apply_right = False
-      if left_formula is not None and right_formula is None:
-        apply_left = True
-      if left_formula is None and right_formula is not None:
-        apply_right = True
-      if left_formula is not None and right_formula is not None:
-        if left_depth < right_depth:
-          apply_left = True
-        else:
-          apply_right = True
-      if left_formula is None and right_formula is None:
-        return False
+        # Получаем следующий секвент из списка для проверки
+        old_sequent = None
+        while len(frontier) > 0 and (old_sequent is None or old_sequent in proven):
+            old_sequent = frontier.pop(0)  # Извлекаем первый секвент
+        if old_sequent is None:
+            break  # Если больше нет секвентов для проверки, выходим из цикла
 
-      # apply a left rule
-      if apply_left:
-        if isinstance(left_formula, Not):
-          new_sequent = applyNotLeft(old_sequent, left_formula)
-          frontier.append(new_sequent)
-          break
-        if isinstance(left_formula, Implies):
-          new_sequents = applyModusPonens(old_sequent, left_formula)
-          frontier.extend(new_sequents)
-          break
+        # Выводим информацию о текущем секвенте
+        print(f'Глубина: {old_sequent.depth}. Секвент: {old_sequent}')
 
+        # Проверяем, является ли секвент аксиоматически истинным без унификации
+        if len(set(old_sequent.left.keys()) & set(old_sequent.right.keys())) > 0:
+            proven.add(old_sequent)  # Добавляем секвент в доказанные
+            continue  # Переходим к следующему секвенту
 
-      # apply a right rule
-      if apply_right:
-        if isinstance(right_formula, Not):
-          new_sequent = applyNotRight(old_sequent, right_formula)
-          frontier.append(new_sequent)
-          break
-        if isinstance(right_formula, Implies):
-          new_sequent = applyImpliesRight(old_sequent, right_formula)
-          frontier.append(new_sequent)
-          break
+        # Проверяем наличие унифицируемых пар для каждого соседа
+        if old_sequent.siblings is not None:
+            sibling_pair_lists = [sequent.getUnifiablePairs() for sequent in old_sequent.siblings]
 
+            # Проверяем, есть ли унифицируемая пара для каждого соседа
+            if all([len(pair_list) > 0 for pair_list in sibling_pair_lists]):
+                # Перебираем все возможные комбинации унифицируемых пар
+                substitution = None
+                index = [0] * len(sibling_pair_lists)
+                while True:
+                    # Пытаемся унифицировать формулы
+                    substitution = unify_list([sibling_pair_lists[i][index[i]] for i in range(len(sibling_pair_lists))])
+                    if substitution is not None:
+                        break  # Если унификация удалась, выходим из цикла
 
+                    # Увеличиваем индекс для следующей попытки унификации
+                    pos = len(sibling_pair_lists) - 1
+                    while pos >= 0:
+                        index[pos] += 1
+                        if index[pos] < len(sibling_pair_lists[pos]):
+                            break
+                        index[pos] = 0
+                        pos -= 1
+                    if pos < 0:
+                        break  # Если перебрали все возможные комбинации, выходим
 
-  # no more sequents to prove
-  return True
+                # Если унификация успешна, выводим замену и обновляем списки
+                if substitution is not None:
+                    for k, v in substitution.items():
+                        print(f'  Замена: {k} = {v}')  # Выводим замену
+                    proven |= old_sequent.siblings  # Добавляем всех соседей в доказанные
+                    frontier = [sequent for sequent in frontier if sequent not in old_sequent.siblings]
+                    continue
+
+            else:
+                # Если не удалось найти унифицируемые пары, удаляем соседа
+                old_sequent.siblings.remove(old_sequent)
+
+        while True:
+            # Определяем, какую формулу будем расширять
+            left_formula = None
+            left_depth = None
+            for formula, depth in old_sequent.left.items():
+                if left_depth is None or left_depth > depth:
+                    if not isinstance(formula, Predicate):
+                        left_formula = formula
+                        left_depth = depth
+            
+            right_formula = None
+            right_depth = None
+            for formula, depth in old_sequent.right.items():
+                if right_depth is None or right_depth > depth:
+                    if not isinstance(formula, Predicate):
+                        right_formula = formula
+                        right_depth = depth
+
+            # Определяем, будем ли применять левое или правое правило
+            apply_left = False
+            apply_right = False
+            if left_formula is not None and right_formula is None:
+                apply_left = True
+            if left_formula is None and right_formula is not None:
+                apply_right = True
+            if left_formula is not None and right_formula is not None:
+                if left_depth < right_depth:
+                    apply_left = True
+                else:
+                    apply_right = True
+            if left_formula is None and right_formula is None:
+                return False  # Если формул нет, не можем доказать
+
+            # Применение левого правила
+            if apply_left:
+                if isinstance(left_formula, Not):
+                    new_sequent = applyNotLeft(old_sequent, left_formula)
+                    frontier.append(new_sequent)  # Добавляем новый секвент в frontier
+                    break
+                if isinstance(left_formula, Implies):
+                    new_sequents = applyModusPonens(old_sequent, left_formula)
+                    frontier.extend(new_sequents)  # Добавляем новые секвенты в frontier
+                    break
+
+            # Применение правого правила
+            if apply_right:
+                if isinstance(right_formula, Not):
+                    new_sequent = applyNotRight(old_sequent, right_formula)
+                    frontier.append(new_sequent)  # Добавляем новый секвент в frontier
+                    break
+                if isinstance(right_formula, Implies):
+                    new_sequent = applyImpliesRight(old_sequent, right_formula)
+                    frontier.append(new_sequent)  # Добавляем новый секвент в frontier
+                    break
+
+    # Если больше нет секвентов для доказательства, возвращаем True
+    return True
 
 # returns True if the formula is provable
 # returns False or loops forever if the formula is not provable
