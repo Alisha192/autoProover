@@ -183,3 +183,55 @@ class Utils:
         # Remove all whitespace, then apply expandNot, expandAnd, and expandOr in sequence
         thm = thm.replace(" ", "")
         return Utils.remove_unwanted_brac(Utils.expand_or(Utils.expand_and(Utils.expand_not(thm))))
+
+    class Utils:
+
+    @staticmethod
+    def expand_hypothesis(hyp: str) -> "Hypothesis":
+        count = 0
+        pos = 0
+
+        newhypo = Hypothesis(expression="", lhs="", rhs="")
+
+        # Если выражение состоит из одного символа
+        if len(hyp) == 1:
+            exp = hyp[0]
+            newhypo.expression = exp
+            newhypo.lhs = exp
+            newhypo.rhs = ""
+            return newhypo
+
+        # Обход строки для нахождения основного разделителя
+        while pos < len(hyp):
+            c = hyp[pos]
+            if c == '(':
+                count += 1
+            elif c == ')':
+                count -= 1
+            elif c == '-' and count == 0:
+                # Разделение на lhs и rhs
+                if hyp[0] == '(':
+                    # lhs в скобках
+                    lhs = hyp[1:pos - 1]
+                else:
+                    lhs = hyp[:pos]
+                
+                if hyp[pos + 2] == '(':
+                    # rhs в скобках
+                    rhs = hyp[pos + 3:len(hyp) - 1]
+                else:
+                    rhs = hyp[pos + 2:]
+                
+                # Формирование новой гипотезы
+                newhypo.lhs = lhs
+                newhypo.rhs = rhs
+                newhypo.expression = Utils.expression(lhs, rhs)
+                return newhypo
+            
+            pos += 1
+
+        # Обработка выражения вида (p->q)
+        return Utils.expand_hypothesis(hyp[1:-1])
+
+    
+
