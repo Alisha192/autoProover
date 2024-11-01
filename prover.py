@@ -1,54 +1,92 @@
 from language import *
 
 def unify(term_a, term_b):
-  if isinstance(term_a, UnificationTerm):
-    if term_b.occurs(term_a) or term_b.time > term_a.time:
-      return None
-    return { term_a: term_b }
-  if isinstance(term_b, UnificationTerm):
-    if term_a.occurs(term_b) or term_a.time > term_b.time:
-      return None
-    return { term_b: term_a }
-  if isinstance(term_a, Variable) and isinstance(term_b, Variable):
-    if term_a == term_b:
-      return { }
-    return None
-  if (isinstance(term_a, Function) and isinstance(term_b, Function)) or \
-     (isinstance(term_a, Predicate) and isinstance(term_b, Predicate)):
-    if term_a.name != term_b.name:
-      return None
-    if len(term_a.terms) != len(term_b.terms):
-      return None
-    substitution = { }
-    for i in range(len(term_a.terms)):
-      a = term_a.terms[i]
-      b = term_b.terms[i]
-      for k, v in substitution.items():
-        a = a.replace(k, v)
-        b = b.replace(k, v)
-      sub = unify(a, b)
-      if sub == None:
-        return None
-      for k, v in sub.items():
-        substitution[k] = v
-    return substitution
-  return None
+    """
+    Выполняет унификацию двух термов.
 
-# solve a list of equations
+    :param term_a: Первый терм для унификации.
+    :param term_b: Второй терм для унификации.
+    :return: Словарь с заменами, если унификация возможна; иначе None.
+    """
+    # Если первый терм - унификационный терм
+    if isinstance(term_a, UnificationTerm):
+        # Проверяем, не возникает ли конфликт (цикличность) и не превышает ли время замены
+        if term_b.occurs(term_a) or term_b.time > term_a.time:
+            return None  # Невозможно унифицировать
+        return {term_a: term_b}  # Возвращаем замену терма
+
+    # Если второй терм - унификационный терм
+    if isinstance(term_b, UnificationTerm):
+        # Проверяем на цикличность и время
+        if term_a.occurs(term_b) or term_a.time > term_b.time:
+            return None  # Невозможно унифицировать
+        return {term_b: term_a}  # Возвращаем замену терма
+
+    # Если оба терма - переменные
+    if isinstance(term_a, Variable) and isinstance(term_b, Variable):
+        if term_a == term_b:
+            return {}  # Они идентичны, ничего не меняем
+        return None  # Две разные переменные не могут быть унифицированы
+
+    # Если оба терма - функции или предикаты
+    if (isinstance(term_a, Function) and isinstance(term_b, Function)) or \
+       (isinstance(term_a, Predicate) and isinstance(term_b, Predicate)):
+        # Проверяем, совпадают ли имена
+        if term_a.name != term_b.name:
+            return None  # Разные имена не могут быть унифицированы
+        if len(term_a.terms) != len(term_b.terms):
+            return None  # Разное количество аргументов
+
+        substitution = {}  # Словарь для хранения замен
+        for i in range(len(term_a.terms)):
+            a = term_a.terms[i]
+            b = term_b.terms[i]
+
+            # Применяем существующие замены к термам
+            for k, v in substitution.items():
+                a = a.replace(k, v)
+                b = b.replace(k, v)
+
+            sub = unify(a, b)  # Рекурсивно унифицируем термы
+            if sub is None:
+                return None  # Если унификация невозможна
+
+            # Добавляем новые замены
+            for k, v in sub.items():
+                substitution[k] = v
+
+        return substitution  # Возвращаем найденные замены
+
+    return None  # Невозможна унификация других типов термов
+
+
 def unify_list(pairs):
-  substitution = { }
-  for term_a, term_b in pairs:
-    a = term_a
-    b = term_b
-    for k, v in substitution.items():
-      a = a.replace(k, v)
-      b = b.replace(k, v)
-    sub = unify(a, b)
-    if sub == None:
-      return None
-    for k, v in sub.items():
-      substitution[k] = v
-  return substitution
+    """
+    Решает список уравнений, выполняя унификацию для каждой пары термов.
+
+    :param pairs: Список пар термов для унификации.
+    :return: Словарь с заменами для всех термов, если унификация возможна; иначе None.
+    """
+    substitution = {}  # Словарь для хранения замен
+    for term_a, term_b in pairs:
+        a = term_a
+        b = term_b
+
+        # Применяем существующие замены к термам
+        for k, v in substitution.items():
+            a = a.replace(k, v)
+            b = b.replace(k, v)
+
+        sub = unify(a, b)  # Пытаемся унифицировать текущую пару термов
+        if sub is None:
+            return None  # Если унификация невозможна, возвращаем None
+
+        # Добавляем новые замены
+        for k, v in sub.items():
+            substitution[k] = v
+
+    return substitution  # Возвращаем найденные замены
+
 
 ##############################################################################
 # Sequents
