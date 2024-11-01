@@ -55,71 +55,121 @@ def unify_list(pairs):
 ##############################################################################
 
 class Sequent:
-  def __init__(self, left, right, siblings, depth):
-    self.left = left
-    self.right = right
-    self.siblings = siblings
-    self.depth = depth
+    def __init__(self, left, right, siblings, depth):
+        """
+        Инициализация секвента.
 
-  def freeVariables(self):
-    result = set()
-    for formula in self.left:
-      result |= formula.freeVariables()
-    for formula in self.right:
-      result |= formula.freeVariables()
-    return result
+        :param left: Левые формулы секвента (обычно предпосылки).
+        :param right: Правые формулы секвента (обычно вывод).
+        :param siblings: Соседние секванты (доказанные секванты, которые связаны с этим).
+        :param depth: Глубина секвента в дереве доказательства.
+        """
+        self.left = left  # Хранит формулы слева от знака вывода
+        self.right = right  # Хранит формулы справа от знака вывода
+        self.siblings = siblings  # Хранит соседние секванты
+        self.depth = depth  # Глубина текущего секвента
 
-  def freeUnificationTerms(self):
-    result = set()
-    for formula in self.left:
-      result |= formula.freeUnificationTerms()
-    for formula in self.right:
-      result |= formula.freeUnificationTerms()
-    return result
+    def freeVariables(self):
+        """
+        Возвращает множество свободных переменных в секвенте.
 
-  def getVariableName(self, prefix):
-    fv = self.freeVariables() | self.freeUnificationTerms()
-    index = 1
-    name = prefix + str(index)
-    while Variable(name) in fv or UnificationTerm(name) in fv:
-      index += 1
-      name = prefix + str(index)
-    return name
+        Обходит все формулы в левой и правой части секвента и собирает свободные переменные.
+        """
+        result = set()
+        for formula in self.left:
+            result |= formula.freeVariables()  # Собираем свободные переменные из левых формул
+        for formula in self.right:
+            result |= formula.freeVariables()  # Собираем свободные переменные из правых формул
+        return result  # Возвращаем все найденные свободные переменные
 
-  def getUnifiablePairs(self):
-    pairs = []
-    for formula_left in self.left:
-      for formula_right in self.right:
-        if unify(formula_left, formula_right) is not None:
-          pairs.append((formula_left, formula_right))
-    return pairs
+    def freeUnificationTerms(self):
+        """
+        Возвращает множество свободных унификационных термов в секвенте.
 
-  def __eq__(self, other):
-    for formula in self.left:
-      if formula not in other.left:
-        return False
-    for formula in other.left:
-      if formula not in self.left:
-        return False
-    for formula in self.right:
-      if formula not in other.right:
-        return False
-    for formula in other.right:
-      if formula not in self.right:
-        return False
-    return True
+        Обходит все формулы в левой и правой части секвента и собирает свободные унификационные термы.
+        """
+        result = set()
+        for formula in self.left:
+            result |= formula.freeUnificationTerms()  # Собираем свободные унификационные термы из левых формул
+        for formula in self.right:
+            result |= formula.freeUnificationTerms()  # Собираем свободные унификационные термы из правых формул
+        return result  # Возвращаем все найденные свободные унификационные термы
 
-  def __str__(self):
-    left_part = ', '.join([str(formula) for formula in self.left])
-    right_part = ', '.join([str(formula) for formula in self.right])
-    if left_part != '':
-      left_part = left_part + ' '
-    if right_part != '':
-      right_part = ' ' + right_part
-    return left_part + '⊢' + right_part
+    def getVariableName(self, prefix):
+        """
+        Генерирует уникальное имя переменной на основе заданного префикса.
 
-  def __hash__(self):
-    return hash(str(self))
+        Проверяет, существует ли переменная с таким именем, и при необходимости добавляет индекс.
+
+        :param prefix: Префикс для имени переменной.
+        :return: Уникальное имя переменной.
+        """
+        fv = self.freeVariables() | self.freeUnificationTerms()  # Собираем все свободные переменные и унификационные термы
+        index = 1
+        name = prefix + str(index)
+        while Variable(name) in fv or UnificationTerm(name) in fv:  # Проверяем, существует ли уже такая переменная
+            index += 1
+            name = prefix + str(index)  # Увеличиваем индекс и генерируем новое имя
+        return name  # Возвращаем уникальное имя переменной
+
+    def getUnifiablePairs(self):
+        """
+        Возвращает список пар формул, которые могут быть унифицированы.
+
+        Проходит по всем формульным комбинациям в левой и правой части секвента и использует функцию унификации.
+        """
+        pairs = []
+        for formula_left in self.left:
+            for formula_right in self.right:
+                if unify(formula_left, formula_right) is not None:  # Проверяем, могут ли формулы быть унифицированы
+                    pairs.append((formula_left, formula_right))  # Добавляем пару, если унификация успешна
+        return pairs  # Возвращаем список унифицируемых пар
+
+    def __eq__(self, other):
+        """
+        Проверяет равенство двух секвентов.
+
+        Сравнивает формулы левой и правой частей текущего и другого секвента.
+
+        :param other: Другой секвент для сравнения.
+        :return: True, если секванты равны, иначе False.
+        """
+        for formula in self.left:
+            if formula not in other.left:  # Проверяем, содержится ли формула в другой левой части
+                return False
+        for formula in other.left:
+            if formula not in self.left:  # Проверяем, содержится ли формула в текущей левой части
+                return False
+        for formula in self.right:
+            if formula not in other.right:  # Проверяем, содержится ли формула в другой правой части
+                return False
+        for formula in other.right:
+            if formula not in self.right:  # Проверяем, содержится ли формула в текущей правой части
+                return False
+        return True  # Все формулы совпадают, секванты равны
+
+    def __str__(self):
+        """
+        Преобразует секвент в строку для удобного отображения.
+
+        Формат: 'формулы слева ⊢ формулы справа'.
+        """
+        left_part = ', '.join([str(formula) for formula in self.left])  # Формируем строку для левой части
+        right_part = ', '.join([str(formula) for formula in self.right])  # Формируем строку для правой части
+        if left_part != '':
+            left_part = left_part + ' '  # Добавляем пробел, если левой части нет
+        if right_part != '':
+            right_part = ' ' + right_part  # Добавляем пробел, если правой части нет
+        return left_part + '⊢' + right_part  # Возвращаем строку секвента
+
+    def __hash__(self):
+        """
+        Возвращает хэш секвента для использования в множествах и словарях.
+
+        Хэш основан на строковом представлении секвента.
+        """
+        return hash(str(self))  # Возвращаем хэш на основе строкового представления
+
 
 
 ##############################################################################
