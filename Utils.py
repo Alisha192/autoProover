@@ -233,5 +233,51 @@ class Utils:
         # Обработка выражения вида (p->q)
         return Utils.expand_hypothesis(hyp[1:-1])
 
+    @staticmethod
+    def print_thm_parser(thmp):
+        # Печать гипотез
+        print("Hypothesis:")
+        for key, hyp in thmp.hypothesis.items():
+            print(f"{key} {hyp.expression} lhs: {hyp.lhs} rhs: {hyp.rhs}")
+
+        # Печать левой части гипотез
+        print("LHS:")
+        for key, rhs_set in thmp.lhs_hypo.items():
+            print(f"{key} : ", end="")
+            print(", ".join(rhs_set))  # Печать всех элементов через запятую
+            print()  # Для новой строки
+
+        # Печать правой части гипотез
+        print("RHS:")
+        for key, lhs_set in thmp.rhs_hypo.items():
+            print(f"{key} : ", end="")
+            print(", ".join(lhs_set))  # Печать всех элементов через запятую
+            print()  # Для новой строки
+
+        # Печать уникальных символов
+        print("Distinct Chars:")
+        print(", ".join(thmp.charsinhypo))  # Печать всех символов через запятую
+        print()  # Для новой строки
+
+    def print_hypothesis(hyp):
+        footer = ""
+        if hyp.how == 0:
+            footer = "    Basic Hypothesis"
+        elif hyp.how == 1:
+            footer = f"    Modus Ponens ( {hyp.Ei} on {hyp.Ej} )"
+        elif hyp.how == 2:
+            footer = f"    rule: {hyp.ruleno}    Axiom/Theorem ( {hyp.Ei} on {hyp.Ej} )"
+
+        print(f"{hyp.expression}, lhs: {hyp.lhs}, rhs: {hyp.rhs}{footer}")
+
+    @staticmethod
+    def distinct_chars(s):
+        chars = set()  # Используем множество для уникальных символов
+        chars.add("F")
+        for c in s:
+            if c not in "()->~&|":
+                chars.add(c)
+        return chars
+
     
 
