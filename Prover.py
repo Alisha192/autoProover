@@ -1,4 +1,6 @@
+from lib import *
 from typing import List, Optional, Tuple
+
 
 class ProofStep:
     def __init__(self, index: int, expression: Expression, reason: str):
@@ -7,15 +9,16 @@ class ProofStep:
         self.reason = reason
 
     def __str__(self):
-        return f"{self.index}. {self.expression.to_string()}  # {self.reason}"
+        return f"{self.index}, {self.expression.to_string()}  # {self.reason}"
 
 
 class ProofEngine:
     def __init__(self):
         self.axioms = [
             lambda A, B: Implication(A, Implication(B, A)),  # Аксиома 1
-            lambda A, B, C: Implication(Implication(A, Implication(B, C)), Implication(Implication(A, B), Implication(A, C))),  # Аксиома 2
-            lambda A, B: Implication(Implication(Not(A), Not(B)), Implication(B, A))  # Аксиома 3
+            lambda A, B, C: Implication(Implication(A, Implication(B, C)),
+                                        Implication(Implication(A, B), Implication(A, C))),  # Аксиома 2
+            lambda A, B: Implication(Implication(Negation(A), Negation(B)), Implication(B, A))  # Аксиома 3
             # Можно добавить другие аксиомы
         ]
         self.proven_statements = []  # Доказанные утверждения с их индексами и причинами
@@ -30,7 +33,7 @@ class ProofEngine:
     def match(self, axiom_template, expr: Expression) -> Optional[dict]:
         # Сопоставляем шаблон аксиомы с выражением
         # Здесь нужен код для сопоставления структуры expr и axiom_template
-        return {}  # Заглушка для функции сопоставления
+        return False  # Заглушка для функции сопоставления
 
     def apply_modus_ponens(self, known_expressions: List[ProofStep]) -> List[Tuple[Expression, str]]:
         new_expressions = []
@@ -43,13 +46,12 @@ class ProofEngine:
 
     def prove(self, target: Expression, hypotheses: List[Expression]) -> Optional[List[ProofStep]]:
         proof = []
-        known_expressions = [ProofStep(index=i+1, expression=hypothesis, reason="Гипотеза") for i, hypothesis in enumerate(hypotheses)]
+        known_expressions = [ProofStep(index=i + 1, expression=hypothesis, reason="Гипотеза") for i, hypothesis in
+                             enumerate(hypotheses)]
         proof.extend(known_expressions)
         step_count = len(known_expressions)
-
-        while not any(step.expression.equals(target) for step in known_expressions):
+        while not any(step.expression.__eq__(target) for step in known_expressions):
             new_expressions = []
-
             # Применяем аксиомы
             for axiom_index, axiom in enumerate(self.axioms, start=1):
                 for expr in known_expressions:
@@ -65,16 +67,16 @@ class ProofEngine:
                 new_expressions.append(ProofStep(step_count, new_expr, f"Modus Ponens {reason}"))
 
             # Добавляем только новые выражения
-            new_expressions = [expr for expr in new_expressions if not any(expr.expression.equals(e.expression) for e in known_expressions)]
+            new_expressions = [expr for expr in new_expressions if not any(expr.expression == e.expression) for e in known_expressions]
             if not new_expressions:
                 print("Целевое выражение недоказуемо с текущими гипотезами.")
                 return None  # Доказательство не найдено
-            
+
             proof.extend(new_expressions)
             known_expressions.extend(new_expressions)
 
             # Проверяем, достигнута ли целевая лемма
-            if any(step.expression.equals(target) for step in new_expressions):
+            if any(step.expression.__eq__(target) for step in new_expressions):
                 return proof
 
         return proof
@@ -82,3 +84,11 @@ class ProofEngine:
     def display_proof(self, proof: List[ProofStep]):
         for step in proof:
             print(step)
+
+
+Prof = ProofEngine()
+target = Implication(And(Variable("A"), Variable("B")), Variable("A"))
+
+hyp = [target]
+pr = Prof.prove(target, hyp)
+Prof.display_proof(pr)
