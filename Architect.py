@@ -8,7 +8,7 @@ class Expression(ABC):
         pass
 
     @abstractmethod
-    def equals(self, other: 'Expression') -> bool:
+    def __eq__(self, other: 'Expression') -> bool:
         pass
 
     @abstractmethod
@@ -24,8 +24,8 @@ class And(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} ∧ {self.right.to_string()})"
 
-    def equals(self, other: Expression) -> bool:
-        return isinstance(other, And) and self.left.equals(other.left) and self.right.equals(other.right)
+    def __eq__(self, other: Expression) -> bool:
+        return isinstance(other, And) and self.left.__eq__(other.left) and self.right.__eq__(other.right)
 
     def to_implication_form(self) -> Expression:
         return Negation((Implication(self.left.to_implication_form(), Negation(self.to_implication_form()))))
@@ -39,8 +39,8 @@ class Implication(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} → {self.right.to_string()})"
 
-    def equals(self, other: Expression) -> bool:
-        return isinstance(other, Implication) and self.left.equals(other.left) and self.right.equals(other.right)
+    def __eq__(self, other: Expression) -> bool:
+        return isinstance(other, Implication) and self.left == other.left and self.right == other.right
 
     def to_implication_form(self) -> Expression:
         return self  # Уже в нужной форме
@@ -53,7 +53,7 @@ class Negation(Expression):
     def to_string(self) -> str:
         return f"¬({self.expr.to_string()})"
 
-    def equals(self, other: Expression) -> bool:
+    def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Negation) and self.expr.equals(other.expr)
 
     def to_implication_form(self) -> Expression:
@@ -68,7 +68,7 @@ class Or(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} ∨ {self.right.to_string()})"
 
-    def equals(self, other: Expression) -> bool:
+    def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Or) and self.left.equals(other.left) and self.right.equals(other.right)
 
     def to_implication_form(self) -> Expression:
@@ -83,7 +83,7 @@ class Xor(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} + {self.right.to_string()})"
 
-    def equals(self, other: Expression) -> bool:
+    def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Xor) and self.left.equals(other.left) and self.right.equals(other.right)
 
     def to_implication_form(self) -> Expression:
@@ -97,7 +97,7 @@ class Variable(Expression):
     def to_string(self) -> str:
         return self.name
 
-    def equals(self, other: Expression) -> bool:
+    def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Variable) and self.name == other.name
 
     def to_implication_form(self) -> Expression:
@@ -154,5 +154,4 @@ class ExpressionFactory:
     @staticmethod
     def exclusive_or(left: Expression, right: Expression) -> Expression:
         return Xor(left, right)
-    
-    
+
