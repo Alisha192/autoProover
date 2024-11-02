@@ -28,7 +28,7 @@ class And(Expression):
         return isinstance(other, And) and self.left.equals(other.left) and self.right.equals(other.right)
 
     def to_implication_form(self) -> Expression:
-        return And(self.left.to_implication_form(), self.right.to_implication_form())
+        return Negation((Implication(self.left.to_implication_form(), Negation(self.to_implication_form()))))
 
 
 class Implication(Expression):
@@ -43,7 +43,7 @@ class Implication(Expression):
         return isinstance(other, Implication) and self.left.equals(other.left) and self.right.equals(other.right)
 
     def to_implication_form(self) -> Expression:
-        return self  # Already an implication
+        return self  # Уже в нужной форме
 
 
 class Negation(Expression):
@@ -57,7 +57,7 @@ class Negation(Expression):
         return isinstance(other, Negation) and self.expr.equals(other.expr)
 
     def to_implication_form(self) -> Expression:
-        return Negation(self.expr.to_implication_form())
+        return self #Уже в нужной форме
 
 
 class Or(Expression):
@@ -72,7 +72,7 @@ class Or(Expression):
         return isinstance(other, Or) and self.left.equals(other.left) and self.right.equals(other.right)
 
     def to_implication_form(self) -> Expression:
-        return Or(self.left.to_implication_form(), self.right.to_implication_form())
+        return Implication(Negation(self.left), self.right)
 
 
 class Xor(Expression):
@@ -81,13 +81,13 @@ class Xor(Expression):
         self.right = right
 
     def to_string(self) -> str:
-        return f"({self.left.to_string()} ⊕ {self.right.to_string()})"
+        return f"({self.left.to_string()} + {self.right.to_string()})"
 
     def equals(self, other: Expression) -> bool:
         return isinstance(other, Xor) and self.left.equals(other.left) and self.right.equals(other.right)
 
     def to_implication_form(self) -> Expression:
-        return Xor(self.left.to_implication_form(), self.right.to_implication_form())
+        return Or(And(Negation(self.left), self.right).to_implication_form(), And(self.left, Negation(self.right)).to_implication_form())
 
 
 class Variable(Expression):
@@ -101,7 +101,7 @@ class Variable(Expression):
         return isinstance(other, Variable) and self.name == other.name
 
     def to_implication_form(self) -> Expression:
-        return self  # Already a variable
+        return self  # Уже в нужной форме
 
 
 class ExpressionCast:
@@ -154,3 +154,5 @@ class ExpressionFactory:
     @staticmethod
     def exclusive_or(left: Expression, right: Expression) -> Expression:
         return Xor(left, right)
+    
+    
