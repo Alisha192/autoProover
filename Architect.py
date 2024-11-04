@@ -90,6 +90,24 @@ class Xor(Expression):
         return Or(And(Negation(self.left), self.right).to_implication_form(), And(self.left, Negation(self.right)).to_implication_form())
 
 
+class Equivalence(Expression):
+    def __init__(self, left: Expression, right: Expression):
+        self.left = left
+        self.right = right
+
+    def to_string(self) -> str:
+        return f"({self.left.to_string()} = {self.right.to_string()})"
+
+    def __eq__(self, other: Expression) -> bool:
+        return isinstance(other, Equivalence) and self.left == other.left and self.right == other.right
+
+    def to_implication_form(self) -> Expression:
+        return ExpressionFactory.conjunction(
+                ExpressionFactory.implication(self.left, self.right),
+                ExpressionFactory.implication(self.right, self.left)
+            )
+
+
 class Variable(Expression):
     def __init__(self, name: str):
         self.name = name
@@ -129,6 +147,10 @@ class ExpressionCast:
     def as_xor(expr: Expression) -> Optional[Xor]:
         return expr if isinstance(expr, Xor) else None
 
+    @staticmethod
+    def as_equivalence(expr: Expression) -> Optional[Equivalence]:
+        return expr if isinstance(expr, Equivalence) else None
+
 
 class ExpressionFactory:
     @staticmethod
@@ -154,4 +176,8 @@ class ExpressionFactory:
     @staticmethod
     def exclusive_or(left: Expression, right: Expression) -> Expression:
         return Xor(left, right)
+
+    @staticmethod
+    def equivalence(left: Expression, right: Expression) -> Expression:
+        return Equivalence(left, right)
 
