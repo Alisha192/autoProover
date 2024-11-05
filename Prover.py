@@ -1,94 +1,61 @@
-from lib import *
-from typing import List, Optional, Tuple
+from typing import List, Optional
+from Architect import *
 
 
 class ProofStep:
-    def __init__(self, index: int, expression: Expression, reason: str):
+    def __init__(self, index, expr: Expression, comment: str):
+        self.expr = expr
+        self.comment = comment
         self.index = index
-        self.expression = expression
-        self.reason = reason
 
     def __str__(self):
-        return f"{self.index}, {self.expression.to_string()}  # {self.reason}"
+        return f"{self.index} - {self.expr.to_string()} - {self.comment}"
 
 
-class ProofEngine:
-    def __init__(self):
-        self.axioms = [
-            lambda A, B: Implication(A, Implication(B, A)),  # Аксиома 1
-            lambda A, B, C: Implication(Implication(A, Implication(B, C)),
-                                        Implication(Implication(A, B), Implication(A, C))),  # Аксиома 2
-            lambda A, B: Implication(Implication(Negation(A), Negation(B)), Implication(B, A))  # Аксиома 3
-            # Можно добавить другие аксиомы
-        ]
-        self.proven_statements = []  # Доказанные утверждения с их индексами и причинами
+class Prover:
+    def __init__(self, axioms: List[Expression], target: Expression):
+        self.axioms = axioms
+        self.target = target
+        self.step_index = 0
+        self.proof_steps = []  # Список шагов доказательства
+        self.hypotheses = []  # Список гипотез для текущего доказательства
 
-    def is_axiom(self, expr: Expression) -> Optional[Tuple[int, dict]]:
-        for i, axiom in enumerate(self.axioms, start=1):
-            substitution = self.match(axiom, expr)
-            if substitution is not None:
-                return i, substitution
-        return None
+    def reverse_deduction(self):
+        new_target = self.target
+        while not isinstance(new_target, Variable):
+            self.hypotheses.append(new_target.left)
+            new_target = new_target.right
+        self.target = new_target
 
-    def match(self, axiom_template, expr: Expression) -> Optional[dict]:
-        # Сопоставляем шаблон аксиомы с выражением
-        # Здесь нужен код для сопоставления структуры expr и axiom_template
-        return False  # Заглушка для функции сопоставления
+    def find_modus_ponens(self) -> List[Expression]:
+        #не забыть увеличивать step_index
+        pass
 
-    def apply_modus_ponens(self, known_expressions: List[ProofStep]) -> List[Tuple[Expression, str]]:
-        new_expressions = []
-        for step1 in known_expressions:
-            for step2 in known_expressions:
-                if isinstance(step2.expression, Implication) and step2.expression.left.equals(step1.expression):
-                    reason = f"{step1.index}, {step2.index}"
-                    new_expressions.append((step2.expression.right, reason))
-        return new_expressions
+    def aply_modus_ponens(self, axiom: Expression, formula: Expression) -> Expression:
+        pass
 
-    def prove(self, target: Expression, hypotheses: List[Expression]) -> Optional[List[ProofStep]]:
-        proof = []
-        known_expressions = [ProofStep(index=i + 1, expression=hypothesis, reason="Гипотеза") for i, hypothesis in
-                             enumerate(hypotheses)]
-        proof.extend(known_expressions)
-        step_count = len(known_expressions)
-        while not any(step.expression.__eq__(target) for step in known_expressions):
-            new_expressions = []
-            # Применяем аксиомы
-            for axiom_index, axiom in enumerate(self.axioms, start=1):
-                for expr in known_expressions:
-                    substitution = self.match(axiom, expr.expression)
-                    if substitution is not None:
-                        step_count += 1
-                        reason = f"Аксиома {axiom_index}, {', '.join(f'{k} -> {v.to_string()}' for k, v in substitution.items())}"
-                        new_expressions.append(ProofStep(step_count, expr.expression, reason))
+    def unify(self, formula: Expression) -> Expression:
+        pass
+    def prove(self):
+        if(self.target in self.axioms):
+            print(f"{self.target} это аксиома") #предусмотреть что это может быть акиома с заменой
+            return
+        steps = []
+        self.reverse_deduction()
+        print("новые посылки в результате приминения теоремы дедукции")
+        for hyp in self.hypotheses:
+            print(hyp.to_string())
+        print(f"цель, после применения обратной теоремы дедукции: {self.target.to_string()}")
+        while True:
+            if self.target in self.hypotheses:
+                print("Доказано")
+                break
+            self.step_index += 1
+            modus = self.find_modus_ponens()
+            if modus is None:
+                print("Не удалось доказать")
+                break
+            step = ProofStep(self.step_index, modus[0], "аксиома номер с заменой") #этот момент должен быть в самой функции find_modus_ponens
+            new_exp = self.aply_modus_ponens(modus[0], modus[1])
+            step = ProofStep(self.step_index, new_exp, f"MP строка строка")
 
-            # Применяем modus ponens
-            for new_expr, reason in self.apply_modus_ponens(known_expressions):
-                step_count += 1
-                new_expressions.append(ProofStep(step_count, new_expr, f"Modus Ponens {reason}"))
-
-            # Добавляем только новые выражения
-            new_expressions = [expr for expr in new_expressions if not any(expr.expression == e.expression) for e in known_expressions]
-            if not new_expressions:
-                print("Целевое выражение недоказуемо с текущими гипотезами.")
-                return None  # Доказательство не найдено
-
-            proof.extend(new_expressions)
-            known_expressions.extend(new_expressions)
-
-            # Проверяем, достигнута ли целевая лемма
-            if any(step.expression.__eq__(target) for step in new_expressions):
-                return proof
-
-        return proof
-
-    def display_proof(self, proof: List[ProofStep]):
-        for step in proof:
-            print(step)
-
-
-Prof = ProofEngine()
-target = Implication(And(Variable("A"), Variable("B")), Variable("A"))
-
-hyp = [target]
-pr = Prof.prove(target, hyp)
-Prof.display_proof(pr)
