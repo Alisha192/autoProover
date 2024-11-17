@@ -41,7 +41,8 @@ class App:
                     expression_str = parts[1]
                     parser = Parser(expression_str)
                     expression = parser.parse()
-                    # TODO: Здесь будет вызов функции доказательства
+                    prover = Prover(self.axioms, expression)
+                    prover.prove()
 
                 else:
                     print("Неизвестная команда или некорректный формат ввода. Введите 'help' для справки.")
@@ -68,9 +69,3 @@ class App:
             for i, expr in enumerate(self.axioms, 1):
                 print(f"{i}: {expr.to_string()}")
             print()
-
-
-# Точка входа в программу
-if __name__ == "__main__":
-    app = App()
-    app.run()

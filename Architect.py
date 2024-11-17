@@ -8,6 +8,10 @@ class Expression(ABC):
         pass
 
     @abstractmethod
+    def __str__(self) -> str:
+        pass
+
+    @abstractmethod
     def __eq__(self, other: 'Expression') -> bool:
         pass
 
@@ -24,11 +28,14 @@ class And(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} ∧ {self.right.to_string()})"
 
+    def __str__(self):
+        return self.to_string()
+
     def __eq__(self, other: Expression) -> bool:
         return isinstance(other, And) and self.left.__eq__(other.left) and self.right.__eq__(other.right)
 
     def to_implication_form(self) -> Expression:
-        return Negation((Implication(self.left.to_implication_form(), Negation(self.to_implication_form()))))
+        return Negation((Implication(self.left.to_implication_form(), Negation(self.right.to_implication_form()))))
 
 
 class Implication(Expression):
@@ -39,11 +46,14 @@ class Implication(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} → {self.right.to_string()})"
 
+    def __str__(self):
+        return self.to_string()
+
     def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Implication) and self.left == other.left and self.right == other.right
 
     def to_implication_form(self) -> Expression:
-        return self  # Уже в нужной форме
+        return Implication(self.left.to_implication_form(), self.right.to_implication_form())
 
 
 class Negation(Expression):
@@ -53,11 +63,14 @@ class Negation(Expression):
     def to_string(self) -> str:
         return f"¬({self.expr.to_string()})"
 
+    def __str__(self):
+        return self.to_string()
+
     def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Negation) and self.expr.equals(other.expr)
 
     def to_implication_form(self) -> Expression:
-        return self #Уже в нужной форме
+        return Negation(self.expr.to_implication_form())
 
 
 class Or(Expression):
@@ -68,11 +81,14 @@ class Or(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} ∨ {self.right.to_string()})"
 
+    def __str__(self):
+        return self.to_string()
+
     def __eq__(self, other: Expression) -> bool:
-        return isinstance(other, Or) and self.left.equals(other.left) and self.right.equals(other.right)
+        return isinstance(other, Or) and self.left.__eq__(other.left) and self.right.__eq__(other.right)
 
     def to_implication_form(self) -> Expression:
-        return Implication(Negation(self.left), self.right)
+        return Implication(Negation(self.left.to_implication_form()), self.right.to_implication_form())
 
 
 class Xor(Expression):
@@ -83,11 +99,15 @@ class Xor(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} + {self.right.to_string()})"
 
+    def __str__(self):
+        return self.to_string()
+
     def __eq__(self, other: Expression) -> bool:
-        return isinstance(other, Xor) and self.left.equals(other.left) and self.right.equals(other.right)
+        return isinstance(other, Xor) and self.left.__eq__(other.left) and self.right.__eq__(other.right)
 
     def to_implication_form(self) -> Expression:
-        return Or(And(Negation(self.left), self.right).to_implication_form(), And(self.left, Negation(self.right)).to_implication_form())
+        return Or(And(Negation(self.left), self.right).to_implication_form(),
+                  And(self.left, Negation(self.right)).to_implication_form())
 
 
 class Equivalence(Expression):
@@ -98,14 +118,17 @@ class Equivalence(Expression):
     def to_string(self) -> str:
         return f"({self.left.to_string()} = {self.right.to_string()})"
 
+    def __str__(self):
+        return self.to_string()
+
     def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Equivalence) and self.left == other.left and self.right == other.right
 
     def to_implication_form(self) -> Expression:
-        return ExpressionFactory.conjunction(
-                ExpressionFactory.implication(self.left, self.right),
-                ExpressionFactory.implication(self.right, self.left)
-            )
+        return And(
+                Implication(self.left.to_implication_form(), self.right.to_implication_form()),
+                Implication(self.right.to_implication_form(), self.left.to_implication_form())
+            ).to_implication_form()
 
 
 class Variable(Expression):
@@ -114,6 +137,9 @@ class Variable(Expression):
 
     def to_string(self) -> str:
         return self.name
+
+    def __str__(self):
+        return self.to_string()
 
     def __eq__(self, other: Expression) -> bool:
         return isinstance(other, Variable) and self.name == other.name
