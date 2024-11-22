@@ -5,7 +5,7 @@ from Prover import *
 class App:
     def __init__(self):
         self.axioms = []  # Список для хранения аксиом
-        self.keywords = ['exit', 'help', 'axioms', 'axiom', 'prove']
+        self.keywords = ['exit', 'help', 'axioms', 'axiom', 'prove', 'del']
 
     def run(self):
         print("Добро пожаловать!")
@@ -38,6 +38,15 @@ class App:
                     print(f"Аксиома {expression} успешно добавлена!")
                     print()
 
+                elif command == "del" and len(parts) > 1:
+                    for_del_str = parts[1]
+                    parser = Parser(for_del_str, self.keywords)
+                    for_del = parser.parse()
+                    for i in range(len(self.axioms)):
+                        if self.axioms[i] == for_del:
+                            self.axioms.pop(i)
+                            print(f"Аксиома удалена: {for_del}")
+
                 elif command == 'prove' and len(parts) > 1:
                     expression_str = parts[1]
                     parser = Parser(expression_str, self.keywords)
@@ -67,13 +76,14 @@ class App:
     def show_help():
         print("\nСправка по доступным командам:")
         print("- 'axiom <выражение>' : Добавляет аксиому в список.")
+        print("- 'del <выражение>'   : Удаляет аксиому из списка.")
         print("- 'prove <выражение>' : Запускает функцию доказательства для введённого выражения.")
         print("- 'help'              : Показывает справку с доступными командами.")
         print("- 'exit'              : Завершает работу программы.\n")
 
     def show_axioms(self):
         if not self.axioms:
-            print("Нет сохранённых аксиом.")
+            print("Нет сохранённых аксиом.\n")
         else:
             print("\nСписок аксиом:")
             for i, expr in enumerate(self.axioms, 1):
