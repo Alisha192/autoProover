@@ -1,214 +1,107 @@
 from Utils import *
-from queue import Queue
-from time import time as current_time
+from typing import List
 
 
 class Prover:
-    def __init__(self, axioms: [Expression], target: Expression):
-        self.known_axioms = []
-        self.conclusions = {}
-        self.axioms = axioms
-        self.produced = []
-        self.time_limit = 0
-        self.targets = [target]
-        self.ss = None
-        self.dump = 'prove.txt'
-        self.dep = []
-        self.depends = []
-        self.axioms.reverse = 10000
-        self.dep.reverse = 10000
-        self.depends.reverse = 10000
-        self.known_axioms.reverse = 10000
-        self.conclusions.reverse = 10000
+    def __init__(self, axioms: List[Expression], target: Expression):
+        self.axioms = [simplify(axiom.to_implication_form()) for axiom in axioms]  # Список для хранения аксиом
+        self.conditions = self.axioms  # Условия
+        self.target = simplify(target.to_implication_form())  # Цель доказательства
+        self.to_prove = self.target  # Цель доказательства для обработки
+        self.sequent = None
+        self.preprocessing()
 
-        axiom1 = Implication(Variable("A"), Implication(Variable("B"), Variable("A")))
-        axiom2 = Implication(Implication(Variable("A"), Implication(Variable("B"), Variable("C"))), Implication(Implication(Variable("A"), Variable("B")), Implication(Variable("A"), Variable("C"))))
-        axiom3 = Implication(Implication(Negation(Variable("A")), Negation(Variable("B"))), Implication(Implication(Negation(Variable("A")), Variable("B")), Variable("A")))
+    def preprocessing(self):
+        self.sequent = Sequent({condition: 0 for condition in self.conditions},
+                               {self.to_prove: 0},
+                               None,
+                               0)
+        self.unification()
 
-        ax = [axiom1, axiom2, axiom3]
-        ax.append(modus_ponens(ax[0], ax[0]))  #TODO modus_ponens
-        ax.append(modus_ponens(ax[1], ax[0]))
-        ax.append(modus_ponens(ax[3], ax[1]))
-        ax.append(modus_ponens(ax[4], ax[1]))
-        ax.append(modus_ponens(ax[2], ax[5]))
-        ax.append(modus_ponens(ax[6], ax[6]))
-        ax.append(modus_ponens(ax[7], ax[8]))
-        ax.append(modus_ponens(ax[3], ax[9]))
-        self.add_conclusion(axiom1, [])
-        self.add_conclusion(axiom2, [])
-        self.add_conclusion(axiom3, [])
-        self.add_conclusion(axiom3, [ax[0], ax[0]])
-        self.add_conclusion(ax[3], [ax[0], ax[0]])
-        self.add_conclusion(ax[4], [ax[1], ax[0]])
-        self.add_conclusion(ax[5], [ax[3], ax[1]])
-        self.add_conclusion(ax[6], [ax[4], ax[1]])
-        self.add_conclusion(ax[7], [ax[2], ax[5]])
-        self.add_conclusion(ax[8], [ax[6], ax[6]])
-        self.add_conclusion(ax[9], [ax[7], ax[8]])
-        self.add_conclusion(ax[10], [ax[3], ax[9]])
-
-        self.axioms.append(ax[-1])
-
-    def deduction(self, expression: Expression):
-        if expression is None:
-            return False
-        left = expression.left
-        right = expression.right
-        self.axioms.append(left)
-        self.targets.append(right)
-        return True
-
-    def is_target_proved_by(self, expression:Expression):
-        if expression is None:
-            return False
-        for target in self.targets:
-            if target == expression:
-                return True
-        return False
-
-    def add_expression(self, expression: Expression):
-        expression.normalize()  #TODO normalize
-        if self.known_axioms.__contains__(expression):
-            return False
-        try:
-            with open(self.dump, 'a', encoding='utf-8') as file:
-                file.write(f"{len(self.axioms)}. {expression}\n")
-        except Exception as e:
-            print(f"Ошибка при записи в файл {self.dump}: {e}")
-            return False
-
-    def add_produced(self, expression: Expression):
-        if expression is None:
-            return False
-        if self.known_axioms.__contains__(expression):
-            return False
-        self.produced.append(expression)
-
-    def add_conclusion(self, source: Expression, expressions: [Expression]):
-        source_key = source.to_string()
-        if source_key in self.conclusions:
-            self.conclusions[source_key].clear()
-        self.conclusions[source_key] = [exp.to_string() for exp in expressions]
-
-    def produce(self):
-        if not self.produced:
-            return
-
-        iteration_size = len(self.produced)
-        print(f"iter: {iteration_size}")
-
-        for _ in range(iteration_size):
-
-            expression = self.produced.pop(0)  # Получаем и удаляем первый элемент
-
-            # Ранние проверки
-            if self.is_target_proved_by(expression):
-                self.add_expression(expression)
-                break
-
-            for axiom in self.axioms:
-                # modus_ponens: axiom -> expression
-                expr = modus_ponens(axiom, expression)
-                if self.is_target_proved_by(expr):
-                    self.add_conclusion(expr, [axiom, expression])
-                    self.add_expression(expr)
-                    return
-
-                if self.add_produced(expr):
-                    self.add_conclusion(expr, [axiom, expression])
-
-                # modus_ponens: expression -> axiom (обратный порядок)
-                expr = modus_ponens(expression, axiom)
-                if self.is_target_proved_by(expr):
-                    self.add_conclusion(expr, [expression, axiom])
-                    self.add_expression(expr)
-                    return
-
-                if self.add_produced(expr):
-                    self.add_conclusion(expr, [expression, axiom])
-
-            self.add_expression(expression)
-
-            # Обработка последнего элемента в axioms
-            expr = modus_ponens(self.axioms[-1], self.axioms[-1])
-            if self.add_produced(expr):
-                self.add_conclusion(expr, [self.axioms[-1], self.axioms[-1]])
-
-        print(f"newly produced: {len(self.produced)}")
+    def unification(self):
+        for i in range(len(self.conditions)):
+            substitutions = unify(self.conditions[i], self.to_prove, None)
+            if substitutions is not None:
+                self.conditions[i] = apply_substitutions(self.conditions[i], substitutions)
 
     def prove(self):
-        self.ss.clear()
+        if self.sequent is None:
+            return False
+        """Доказательство строится на основе создания дерева секвентов"""
+        # Списки для хранения секвенции, которые нужно проверить и те, что уже доказаны
+        frontier = [self.sequent]  # Секвенты для проверки
+        proven = {self.sequent}  # Секвенты, которые уже доказаны
 
-        # Упрощение целевых выражений если это возможно
-        while self.deduction(self.targets[-1]):
-            prev = self.targets[-2]
-            curr = self.targets[-1]
-            axiom = self.axioms[-1]
+        while True:
+            # Получаем следующий секвент из списка для проверки
+            old_sequent = None
+            while len(frontier) > 0 and (old_sequent is None or old_sequent in proven):
+                old_sequent = frontier.pop(0)  # Извлекаем первый секвент
+            if old_sequent is None:
+                break  # Если больше нет секвентов для проверки, выходим из цикла
 
-            self.ss.append(f"deduction theorem: Γ ⊢ {prev} <=> Γ U {{{axiom}}} ⊢ {curr}\n")
+            # Выводим информацию о текущем секвенте
+            print(f'Глубина: {old_sequent.depth}. Секвент: {old_sequent}')
 
-        # Запись всех аксиом в обработанные
-        for axiom in self.axioms:
-            axiom.normalize()  # TODO: normalize()
-            self.produced.append(axiom)
-        self.axioms.clear()
-
-        # Вычислить критерий остановки
-        current_time_ms = int(current_time() * 1000)
-        if current_time_ms > (2 ** 64 - 1) - self.time_limit:
-            self.time_limit = 2 ** 64 - 1
-        else:
-            self.time_limit += current_time_ms
-
-        # Начало обработки выражений
-        while int(current_time() * 1000) < self.time_limit:
-            self.produce()
-
-            if self.is_target_proved_by(self.axioms[-1]):
-                break
-
-        # Проверка доказана ли хоть одна из целей
-        if not any(self.is_target_proved_by(expr) for expr in self.axioms):
-            self.ss.append("Не была доказана ни одна цель за указанное время\n")
-            return
-
-        # Нахождение доказаной цели
-        proof = None
-        for axiom in self.axioms:
-            if proof:
-                break
-            for target in self.targets:
-                if target == axiom:
-                    proof = axiom
-                    break
-
-        # Построение цепочки доказательства
-        q = Queue()
-        chain = set()
-        q.put(proof.to_string())
-
-        while not q.empty():
-            node = q.get()
-            chain.add(node)
-
-            if node not in self.conclusions:
+            # Проверяем, является ли секвент аксиоматически истинным без унификации
+            if len(set(old_sequent.left.keys()) & set(old_sequent.right.keys())) > 0:
+                proven.add(old_sequent)
                 continue
 
-            for new_node in self.conclusions[node]:
-                q.put(new_node)
+            while True:
+                # Определим с какой формулой будем работать
+                left_expression = None
+                left_depth = None
+                for expression, depth in old_sequent.left.items():
+                    if left_depth is None or left_depth > depth:
+                        if not isinstance(expression, Variable):
+                            left_expression = expression
+                            left_depth = depth
 
-        # Print thought chain in a pretty format
-        for step in chain:
-            print(step, end="")
-            if step not in self.conclusions:
-                print(" axiom")
-                continue
+                right_expression = None
+                right_depth = None
+                for expression, depth in old_sequent.right.items():
+                    if right_depth is None or right_depth > depth:
+                        if not isinstance(expression, Variable):
+                            right_expression = expression
+                            right_depth = depth
 
-            print(" deps: ", end="")
-            for dep in self.conclusions[step]:
-                print(dep, end=" ")
-            print()
+                # Определяем с какой частью секвента будем работать
+                apply_left = False
+                apply_right = False
+                if left_expression is not None and right_expression is None:
+                    apply_left = True
+                if left_expression is None and right_expression is not None:
+                    apply_right = True
+                if left_expression is not None and right_expression is not None:
+                    if left_depth < right_depth:  # Строгий знак, тк приоритетнее обработать правую часть
+                        apply_left = True
+                    else:
+                        apply_right = True
+                if left_expression is None and right_expression is None:
+                    return False  # Если формул нет, не можем доказать
 
-    def thought_chain(self) -> str:
-        return "".join(self.ss)
+                # Применение левого правила
+                if apply_left:
+                    if isinstance(left_expression, Negation):
+                        new_sequent = remove_left_negation(old_sequent, left_expression)
+                        frontier.append(new_sequent)  # Добавляем новый секвент в frontier
+                        break
+                    if isinstance(left_expression, Implication):
+                        new_sequents = modus_ponens(old_sequent, left_expression)
+                        frontier.extend(new_sequents)  # Добавляем новые секвенты в frontier
+                        break
 
+                # Применение правого правила
+                if apply_right:
+                    if isinstance(right_expression, Negation):
+                        new_sequent = remove_right_negation(old_sequent, right_expression)
+                        frontier.append(new_sequent)  # Добавляем новый секвент в frontier
+                        break
+                    if isinstance(right_expression, Implication):
+                        new_sequent = deduction(old_sequent, right_expression)
+                        frontier.append(new_sequent)  # Добавляем новый секвент в frontier
+                        break
+
+        # Если больше нет секвентов для доказательства, возвращаем True
+        return True
