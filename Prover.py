@@ -1,6 +1,4 @@
-from mimetypes import knownfiles
-from msilib.schema import File
-from Architect import *
+from Utils import *
 from queue import Queue
 from time import time as current_time
 
@@ -26,6 +24,7 @@ class Prover:
         axiom1 = Implication(Variable("A"), Implication(Variable("B"), Variable("A")))
         axiom2 = Implication(Implication(Variable("A"), Implication(Variable("B"), Variable("C"))), Implication(Implication(Variable("A"), Variable("B")), Implication(Variable("A"), Variable("C"))))
         axiom3 = Implication(Implication(Negation(Variable("A")), Negation(Variable("B"))), Implication(Implication(Negation(Variable("A")), Variable("B")), Variable("A")))
+
         ax = [axiom1, axiom2, axiom3]
         ax.append(modus_ponens(ax[0], ax[0]))  #TODO modus_ponens
         ax.append(modus_ponens(ax[1], ax[0]))
@@ -140,7 +139,7 @@ class Prover:
     def prove(self):
         self.ss.clear()
 
-        # Simplify target if possible
+        # Упрощение целевых выражений если это возможно
         while self.deduction(self.targets[-1]):
             prev = self.targets[-2]
             curr = self.targets[-1]
@@ -148,34 +147,32 @@ class Prover:
 
             self.ss.append(f"deduction theorem: Γ ⊢ {prev} <=> Γ U {{{axiom}}} ⊢ {curr}\n")
 
-        # Write all axioms to the produced array
+        # Запись всех аксиом в обработанные
         for axiom in self.axioms:
-            axiom.normalize()
+            axiom.normalize()  # TODO: normalize()
             self.produced.append(axiom)
         self.axioms.clear()
 
-        # Calculate stopping criterion
+        # Вычислить критерий остановки
         current_time_ms = int(current_time() * 1000)
         if current_time_ms > (2 ** 64 - 1) - self.time_limit:
             self.time_limit = 2 ** 64 - 1
         else:
             self.time_limit += current_time_ms
 
-        # Set a limit for the number of operations
-
-        # Start producing expressions
+        # Начало обработки выражений
         while int(current_time() * 1000) < self.time_limit:
             self.produce()
 
             if self.is_target_proved_by(self.axioms[-1]):
                 break
 
-        # Check if any target is proved
+        # Проверка доказана ли хоть одна из целей
         if not any(self.is_target_proved_by(expr) for expr in self.axioms):
-            self.ss.append("No proof was found in the time allotted\n")
+            self.ss.append("Не была доказана ни одна цель за указанное время\n")
             return
 
-        # Find which target was proved
+        # Нахождение доказаной цели
         proof = None
         for axiom in self.axioms:
             if proof:
@@ -185,7 +182,7 @@ class Prover:
                     proof = axiom
                     break
 
-        # Build proof chain
+        # Построение цепочки доказательства
         q = Queue()
         chain = set()
         q.put(proof.to_string())

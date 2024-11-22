@@ -19,7 +19,6 @@ class Expression(ABC):
     def to_implication_form(self) -> 'Expression':
         pass
 
-
 class And(Expression):
     def __init__(self, left: Expression, right: Expression):
         self.left = left
