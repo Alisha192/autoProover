@@ -19,6 +19,11 @@ class Expression(ABC):
     def to_implication_form(self) -> 'Expression':
         pass
 
+    @abstractmethod
+    def __hash__(self):
+        pass
+
+
 class And(Expression):
     def __init__(self, left: Expression, right: Expression):
         self.left = left
@@ -35,6 +40,9 @@ class And(Expression):
 
     def to_implication_form(self) -> Expression:
         return Negation((Implication(self.left.to_implication_form(), Negation(self.right.to_implication_form()))))
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 class Implication(Expression):
@@ -54,6 +62,9 @@ class Implication(Expression):
     def to_implication_form(self) -> Expression:
         return Implication(self.left.to_implication_form(), self.right.to_implication_form())
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 class Negation(Expression):
     def __init__(self, expr: Expression):
@@ -70,6 +81,9 @@ class Negation(Expression):
 
     def to_implication_form(self) -> Expression:
         return Negation(self.expr.to_implication_form())
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 class Or(Expression):
@@ -89,6 +103,9 @@ class Or(Expression):
     def to_implication_form(self) -> Expression:
         return Implication(Negation(self.left.to_implication_form()), self.right.to_implication_form())
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 class Xor(Expression):
     def __init__(self, left: Expression, right: Expression):
@@ -107,6 +124,9 @@ class Xor(Expression):
     def to_implication_form(self) -> Expression:
         return Or(And(Negation(self.left), self.right).to_implication_form(),
                   And(self.left, Negation(self.right)).to_implication_form())
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 class Equivalence(Expression):
@@ -129,6 +149,9 @@ class Equivalence(Expression):
                 Implication(self.right.to_implication_form(), self.left.to_implication_form())
             ).to_implication_form()
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 class Variable(Expression):
     def __init__(self, name: str):
@@ -145,6 +168,9 @@ class Variable(Expression):
 
     def to_implication_form(self) -> Expression:
         return self  # Уже в нужной форме
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 class ExpressionCast:

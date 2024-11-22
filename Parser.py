@@ -1,9 +1,10 @@
-from typing import List, Union
+from typing import List
 from Architect import *
 
 
 class Parser:
-    def __init__(self, expression: str):
+    def __init__(self, expression: str, keywords: List):
+        self.keywords = keywords
         self.tokens = self.tokenize(expression)
         self.pos = 0
 
@@ -35,7 +36,10 @@ class Parser:
     def parse_variable(self) -> Expression:
         token = self.tokens[self.pos]
         self.pos += 1
-        return ExpressionFactory.variable(token)
+        if token.isalnum() and token.lower() not in self.keywords and len(token) == 1:
+            return ExpressionFactory.variable(token)
+        else:
+            raise ValueError("Недопустимое имя переменной")
 
     def parse_parenthesized(self) -> Expression:
         if self.tokens[self.pos] == '(':
