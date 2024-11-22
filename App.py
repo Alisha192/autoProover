@@ -1,5 +1,5 @@
 from Parser import *
-from new_prover import *
+from Prover import *
 
 
 class App:
