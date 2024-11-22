@@ -2,14 +2,15 @@ from datetime import datetime
 
 from language import *
 
+
 def unify(term_a, term_b):
     """
-    Выполняет унификацию двух термов.
+  Выполняет унификацию двух термов.
 
-    :param term_a: Первый терм для унификации.
-    :param term_b: Второй терм для унификации.
-    :return: Словарь с заменами, если унификация возможна; иначе None.
-    """
+  :param term_a: Первый терм для унификации.
+  :param term_b: Второй терм для унификации.
+  :return: Словарь с заменами, если унификация возможна; иначе None.
+  """
     # Если первый терм - унификационный терм
     if isinstance(term_a, UnificationTerm):
         # Проверяем, не возникает ли конфликт (цикличность) и не превышает ли время замены
@@ -32,7 +33,7 @@ def unify(term_a, term_b):
 
     # Если оба терма - функции или предикаты
     if (isinstance(term_a, Function) and isinstance(term_b, Function)) or \
-       (isinstance(term_a, Predicate) and isinstance(term_b, Predicate)):
+            (isinstance(term_a, Predicate) and isinstance(term_b, Predicate)):
         # Проверяем, совпадают ли имена
         if term_a.name != term_b.name:
             return None  # Разные имена не могут быть унифицированы
@@ -64,11 +65,11 @@ def unify(term_a, term_b):
 
 def unify_list(pairs):
     """
-    Решает список уравнений, выполняя унификацию для каждой пары термов.
+  Решает список уравнений, выполняя унификацию для каждой пары термов.
 
-    :param pairs: Список пар термов для унификации.
-    :return: Словарь с заменами для всех термов, если унификация возможна; иначе None.
-    """
+  :param pairs: Список пар термов для унификации.
+  :return: Словарь с заменами для всех термов, если унификация возможна; иначе None.
+  """
     substitution = {}  # Словарь для хранения замен
     for term_a, term_b in pairs:
         a = term_a
@@ -97,13 +98,13 @@ def unify_list(pairs):
 class Sequent:
     def __init__(self, left, right, siblings, depth):
         """
-        Инициализация секвента.
+    Инициализация секвента.
 
-        :param left: Левые формулы секвента (обычно предпосылки).
-        :param right: Правые формулы секвента (обычно вывод).
-        :param siblings: Соседние секванты (доказанные секванты, которые связаны с этим).
-        :param depth: Глубина секвента в дереве доказательства.
-        """
+    :param left: Левые формулы секвента (обычно предпосылки).
+    :param right: Правые формулы секвента (обычно вывод).
+    :param siblings: Соседние секванты (доказанные секванты, которые связаны с этим).
+    :param depth: Глубина секвента в дереве доказательства.
+    """
         self.left = left  # Хранит формулы слева от знака вывода
         self.right = right  # Хранит формулы справа от знака вывода
         self.siblings = siblings  # Хранит соседние секванты
@@ -111,10 +112,10 @@ class Sequent:
 
     def freeVariables(self):
         """
-        Возвращает множество свободных переменных в секвенте.
+    Возвращает множество свободных переменных в секвенте.
 
-        Обходит все формулы в левой и правой части секвента и собирает свободные переменные.
-        """
+    Обходит все формулы в левой и правой части секвента и собирает свободные переменные.
+    """
         result = set()
         for formula in self.left:
             result |= formula.freeVariables()  # Собираем свободные переменные из левых формул
@@ -124,10 +125,10 @@ class Sequent:
 
     def freeUnificationTerms(self):
         """
-        Возвращает множество свободных унификационных термов в секвенте.
+    Возвращает множество свободных унификационных термов в секвенте.
 
-        Обходит все формулы в левой и правой части секвента и собирает свободные унификационные термы.
-        """
+    Обходит все формулы в левой и правой части секвента и собирает свободные унификационные термы.
+    """
         result = set()
         for formula in self.left:
             result |= formula.freeUnificationTerms()  # Собираем свободные унификационные термы из левых формул
@@ -137,13 +138,13 @@ class Sequent:
 
     def getVariableName(self, prefix):
         """
-        Генерирует уникальное имя переменной на основе заданного префикса.
+    Генерирует уникальное имя переменной на основе заданного префикса.
 
-        Проверяет, существует ли переменная с таким именем, и при необходимости добавляет индекс.
+    Проверяет, существует ли переменная с таким именем, и при необходимости добавляет индекс.
 
-        :param prefix: Префикс для имени переменной.
-        :return: Уникальное имя переменной.
-        """
+    :param prefix: Префикс для имени переменной.
+    :return: Уникальное имя переменной.
+    """
         fv = self.freeVariables() | self.freeUnificationTerms()  # Собираем все свободные переменные и унификационные термы
         index = 1
         name = prefix + str(index)
@@ -154,10 +155,10 @@ class Sequent:
 
     def getUnifiablePairs(self):
         """
-        Возвращает список пар формул, которые могут быть унифицированы.
+    Возвращает список пар формул, которые могут быть унифицированы.
 
-        Проходит по всем формульным комбинациям в левой и правой части секвента и использует функцию унификации.
-        """
+    Проходит по всем формульным комбинациям в левой и правой части секвента и использует функцию унификации.
+    """
         pairs = []
         for formula_left in self.left:
             for formula_right in self.right:
@@ -167,13 +168,13 @@ class Sequent:
 
     def __eq__(self, other):
         """
-        Проверяет равенство двух секвентов.
+    Проверяет равенство двух секвентов.
 
-        Сравнивает формулы левой и правой частей текущего и другого секвента.
+    Сравнивает формулы левой и правой частей текущего и другого секвента.
 
-        :param other: Другой секвент для сравнения.
-        :return: True, если секванты равны, иначе False.
-        """
+    :param other: Другой секвент для сравнения.
+    :return: True, если секванты равны, иначе False.
+    """
         for formula in self.left:
             if formula not in other.left:  # Проверяем, содержится ли формула в другой левой части
                 return False
@@ -190,10 +191,10 @@ class Sequent:
 
     def __str__(self):
         """
-        Преобразует секвент в строку для удобного отображения.
+    Преобразует секвент в строку для удобного отображения.
 
-        Формат: 'формулы слева ⊢ формулы справа'.
-        """
+    Формат: 'формулы слева ⊢ формулы справа'.
+    """
         left_part = ', '.join([str(formula) for formula in self.left])  # Формируем строку для левой части
         right_part = ', '.join([str(formula) for formula in self.right])  # Формируем строку для правой части
         if left_part != '':
@@ -204,12 +205,11 @@ class Sequent:
 
     def __hash__(self):
         """
-        Возвращает хэш секвента для использования в множествах и словарях.
+    Возвращает хэш секвента для использования в множествах и словарях.
 
-        Хэш основан на строковом представлении секвента.
-        """
+    Хэш основан на строковом представлении секвента.
+    """
         return hash(str(self))  # Возвращаем хэш на основе строкового представления
-
 
 
 ##############################################################################
@@ -221,16 +221,16 @@ class Sequent:
 def applyModusPonens(old_sequent, left_formula):
     print(f"Используется modus ponens {old_sequent} и {left_formula}")
     new_sequent_a = Sequent(
-      old_sequent.left.copy(),
-      old_sequent.right.copy(),
-      old_sequent.siblings,
-      old_sequent.depth + 1
+        old_sequent.left.copy(),
+        old_sequent.right.copy(),
+        old_sequent.siblings,
+        old_sequent.depth + 1
     )
     new_sequent_b = Sequent(
-      old_sequent.left.copy(),
-      old_sequent.right.copy(),
-      old_sequent.siblings,
-      old_sequent.depth + 1
+        old_sequent.left.copy(),
+        old_sequent.right.copy(),
+        old_sequent.siblings,
+        old_sequent.depth + 1
     )
     del new_sequent_a.left[left_formula]
     del new_sequent_b.left[left_formula]
@@ -238,57 +238,62 @@ def applyModusPonens(old_sequent, left_formula):
     new_sequent_b.left[left_formula.formula_b] = old_sequent.left[left_formula] + 1
 
     if new_sequent_a.siblings is not None:
-      new_sequent_a.siblings.add(new_sequent_a)
+        new_sequent_a.siblings.add(new_sequent_a)
     if new_sequent_b.siblings is not None:
-      new_sequent_b.siblings.add(new_sequent_b)
+        new_sequent_b.siblings.add(new_sequent_b)
 
     return [new_sequent_a, new_sequent_b]
 
 
 def applyNotLeft(old_sequent, left_formula):
-  print(f"используется правило для {old_sequent} и {left_formula}: Когда формула ¬A находится в левой части секвента, это означает, что в этом контексте мы утверждаем, что формула A ложна. Чтобы изменить это представление, мы перемещаем A в правую часть секвента, так как теперь A должна быть доказана как ложная в рамках вывода.")
-  # Создаем новый секвент с копиями текущих частей
-  new_sequent = Sequent(
-    old_sequent.left.copy(),
-    old_sequent.right.copy(),
-    old_sequent.siblings,
-    old_sequent.depth + 1
-  )
-  # Удаляем отрицание из левой части и добавляем его формулу в правую часть
-  del new_sequent.left[left_formula]
-  new_sequent.right[left_formula.formula] = old_sequent.left[left_formula] + 1
-  return new_sequent
+    print(
+        f"используется правило для {old_sequent} и {left_formula}: Когда формула ¬A находится в левой части секвента, это означает, что в этом контексте мы утверждаем, что формула A ложна. Чтобы изменить это представление, мы перемещаем A в правую часть секвента, так как теперь A должна быть доказана как ложная в рамках вывода.")
+    # Создаем новый секвент с копиями текущих частей
+    new_sequent = Sequent(
+        old_sequent.left.copy(),
+        old_sequent.right.copy(),
+        old_sequent.siblings,
+        old_sequent.depth + 1
+    )
+    # Удаляем отрицание из левой части и добавляем его формулу в правую часть
+    del new_sequent.left[left_formula]
+    new_sequent.right[left_formula.formula] = old_sequent.left[left_formula] + 1
+    return new_sequent
 
 
 def applyNotRight(old_sequent, right_formula):
-  print(f"используеся правило для {old_sequent} и {right_formula}: Когда формула ¬A находится в правой части секвента, это указывает на то, что A в левой части должно быть истинным. Чтобы это выразить, мы перемещаем A в левую часть секвента, где оно должно быть доказано как истинное.")
-  # Создаем новый секвент с копиями текущих частей
-  new_sequent = Sequent(
-    old_sequent.left.copy(),
-    old_sequent.right.copy(),
-    old_sequent.siblings,
-    old_sequent.depth + 1
-  )
-  # Удаляем отрицание из правой части и добавляем его формулу в левую часть
-  del new_sequent.right[right_formula]
-  new_sequent.left[right_formula.formula] = old_sequent.right[right_formula] + 1
-  return new_sequent
+    print(
+        f"используеся правило для {old_sequent} и {right_formula}: Когда формула ¬A находится в правой части секвента, это указывает на то, что A в левой части должно быть истинным. Чтобы это выразить, мы перемещаем A в левую часть секвента, где оно должно быть доказано как истинное.")
+    # Создаем новый секвент с копиями текущих частей
+    new_sequent = Sequent(
+        old_sequent.left.copy(),
+        old_sequent.right.copy(),
+        old_sequent.siblings,
+        old_sequent.depth + 1
+    )
+    # Удаляем отрицание из правой части и добавляем его формулу в левую часть
+    del new_sequent.right[right_formula]
+    new_sequent.left[right_formula.formula] = old_sequent.right[right_formula] + 1
+    return new_sequent
 
 
 def applyImpliesRight(old_sequent, right_formula):
-  print(f"используется правило для {old_sequent} и {right_formula}: Когда формула A → B находится в правой части секвента, это означает, что если A истинно, то должно быть истинно и B. Логически это эквивалентно утверждению, что либо A ложна, либо B истинно, то есть ¬A ∨ B.")
-  # Создаем новый секвент с копиями текущих частей
-  new_sequent = Sequent(
-    old_sequent.left.copy(),
-    old_sequent.right.copy(),
-    old_sequent.siblings,
-    old_sequent.depth + 1
-  )
-  # Удаляем импликацию из правой части и добавляем её разложение
-  del new_sequent.right[right_formula]
-  new_sequent.left[right_formula.formula_a] = old_sequent.right[right_formula] + 1
-  new_sequent.right[right_formula.formula_b] = old_sequent.right[right_formula] + 1
-  return new_sequent
+    print(
+        f"используется правило для {old_sequent} и {right_formula}: Когда формула A → B находится в правой части секвента, это означает, что если A истинно, то должно быть истинно и B. Логически это эквивалентно утверждению, что либо A ложна, либо B истинно, то есть ¬A ∨ B.")
+    # Создаем новый секвент с копиями текущих частей
+    new_sequent = Sequent(
+        old_sequent.left.copy(),
+        old_sequent.right.copy(),
+        old_sequent.siblings,
+        old_sequent.depth + 1
+    )
+    # Удаляем импликацию из правой части и добавляем её разложение
+    del new_sequent.right[right_formula]
+    new_sequent.left[right_formula.formula_a] = old_sequent.right[right_formula] + 1
+    new_sequent.right[right_formula.formula_b] = old_sequent.right[right_formula] + 1
+    return new_sequent
+
+
 def proveSequent(sequent):
     # Сбрасываем время инстанциации для каждой формулы в секвенте
     for formula in sequent.left:
@@ -298,7 +303,7 @@ def proveSequent(sequent):
 
     # Списки для хранения секвентов, которые нужно проверить и которые уже доказаны
     frontier = [sequent]  # Секвенты для проверки
-    proven = { sequent }  # Секвенты, которые уже доказаны
+    proven = {sequent}  # Секвенты, которые уже доказаны
 
     while True:
         # Получаем следующий секвент из списка для проверки
@@ -363,7 +368,7 @@ def proveSequent(sequent):
                     if not isinstance(formula, Predicate):
                         left_formula = formula
                         left_depth = depth
-            
+
             right_formula = None
             right_depth = None
             for formula, depth in old_sequent.right.items():
@@ -414,14 +419,13 @@ def proveSequent(sequent):
 
 
 def proveFormula(axioms, formula):
-  start = datetime.now()
-  result =  proveSequent(Sequent(
-    { axiom: 0 for axiom in axioms },
-    { formula: 0 },
-    None,
-    0
-  ))
-  end = datetime.now()
-  time = end-start
-  return result, time
-
+    start = datetime.now()
+    result = proveSequent(Sequent(
+        {axiom: 0 for axiom in axioms},
+        {formula.to_implication(): 0},
+        None,
+        0
+    ))
+    end = datetime.now()
+    time = end - start
+    return result, time
