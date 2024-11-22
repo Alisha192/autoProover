@@ -99,11 +99,3 @@ class Parser:
             right = self.parse_implication()
             left = ExpressionFactory.equivalence(left, right)
         return left
-
-
-if __name__ == "__main__":
-    # Пример использования
-    # parser = Parser("(A > C) > ((B > C) > ((A | B) > C))")
-    parser = Parser("A = C > (B = C)")
-    expression_tree = parser.parse()
-    print(expression_tree.to_string())  # Для проверки парсера

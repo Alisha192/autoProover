@@ -12,16 +12,17 @@ class Prover:
         self.preprocessing()
 
     def preprocessing(self):
+        self.unification()
         self.sequent = Sequent({condition: 0 for condition in self.conditions},
                                {self.to_prove: 0},
                                None,
                                0)
-        self.unification()
 
     def unification(self):
         for i in range(len(self.conditions)):
             substitutions = unify(self.conditions[i], self.to_prove, None)
             if substitutions is not None:
+                print(f"Замены при унификации: {", ".join(f"{k}: {v}" for k, v in substitutions.items())}")
                 self.conditions[i] = apply_substitutions(self.conditions[i], substitutions)
 
     def prove(self):

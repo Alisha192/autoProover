@@ -71,13 +71,15 @@ class Negation(Expression):
         self.expr = expr
 
     def to_string(self) -> str:
+        if isinstance(self.expr, Variable):
+            return f"¬{self.expr.to_string()}"
         return f"¬({self.expr.to_string()})"
 
     def __str__(self):
         return self.to_string()
 
     def __eq__(self, other: Expression) -> bool:
-        return isinstance(other, Negation) and self.expr.equals(other.expr)
+        return isinstance(other, Negation) and self.expr.__eq__(other.expr)
 
     def to_implication_form(self) -> Expression:
         return Negation(self.expr.to_implication_form())
@@ -231,4 +233,3 @@ class ExpressionFactory:
     @staticmethod
     def equivalence(left: Expression, right: Expression) -> Expression:
         return Equivalence(left, right)
-

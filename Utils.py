@@ -16,62 +16,6 @@ class Sequent:
         self.siblings = siblings  # Хранит соседние секванты
         self.depth = depth  # Глубина текущего секвента
 
-    # def freeVariables(self):
-    #     """
-    #     Возвращает множество свободных переменных в секвенте.
-    #
-    #     Обходит все формулы в левой и правой части секвента и собирает свободные переменные.
-    #     """
-    #     result = set()
-    #     for expression in self.left:
-    #         result |= expression.freeVariables()  # Собираем свободные переменные из левых формул
-    #     for expression in self.right:
-    #         result |= expression.freeVariables()  # Собираем свободные переменные из правых формул
-    #     return result  # Возвращаем все найденные свободные переменные
-    #
-    # def freeUnificationTerms(self):
-    #     """
-    #     Возвращает множество свободных унификационных термов в секвенте.
-    #
-    #     Обходит все формулы в левой и правой части секвента и собирает свободные унификационные термы.
-    #     """
-    #     result = set()
-    #     for expression in self.left:
-    #         result |= expression.freeUnificationTerms()  # Собираем свободные унификационные термы из левых формул
-    #     for expression in self.right:
-    #         result |= expression.freeUnificationTerms()  # Собираем свободные унификационные термы из правых формул
-    #     return result  # Возвращаем все найденные свободные унификационные термы
-    #
-    # def getVariableName(self, prefix):
-    #     """
-    #     Генерирует уникальное имя переменной на основе заданного префикса.
-    #
-    #     Проверяет, существует ли переменная с таким именем, и при необходимости добавляет индекс.
-    #
-    #     :param prefix: Префикс для имени переменной.
-    #     :return: Уникальное имя переменной.
-    #     """
-    #     fv = self.freeVariables() | self.freeUnificationTerms()  # Собираем все свободные переменные и унификационные термы
-    #     index = 1
-    #     name = prefix + str(index)
-    #     while Variable(name) in fv or UnificationTerm(name) in fv:  # Проверяем, существует ли уже такая переменная
-    #         index += 1
-    #         name = prefix + str(index)  # Увеличиваем индекс и генерируем новое имя
-    #     return name  # Возвращаем уникальное имя переменной
-    #
-    # def getUnifiablePairs(self):
-    #     """
-    #     Возвращает список пар формул, которые могут быть унифицированы.
-    #
-    #     Проходит по всем формульным комбинациям в левой и правой части секвента и использует функцию унификации.
-    #     """
-    #     pairs = []
-    #     for formula_left in self.left:
-    #         for formula_right in self.right:
-    #             if unify(formula_left, formula_right) is not None:  # Проверяем, могут ли формулы быть унифицированы
-    #                 pairs.append((formula_left, formula_right))  # Добавляем пару, если унификация успешна
-    #     return pairs  # Возвращаем список унифицируемых пар
-
     def __eq__(self, other):
         """
         Проверяет равенство двух секвентов.
@@ -123,7 +67,6 @@ def deduction(sequent, expression):
     Применение теоремы о дедукции:
     Удаляем импликацию из правой части и добавляем её разложение
     """
-    print(f"По теореме о дедукции {expression} разбивается на {expression.left} в левой части и {expression.right} в правой")
     new_sequent = Sequent(
         sequent.left.copy(),
         sequent.right.copy(),
@@ -210,7 +153,7 @@ def simplify(expression: Expression):
     if isinstance(expression, (Equivalence, Xor, Or, Implication, And)):
         current_class = type(expression)
         return current_class(simplify(expression.left), simplify(expression.right))
-    return None
+    return expression
 
 
 def unify(expr1: Expression, expr2: Expression, substitutions: dict | None) -> dict | None:
@@ -253,19 +196,21 @@ def unify_variable(var: Variable, expr: Expression, substitutions: dict):
     :param substitutions: Текущие подстановки.
     :return: Обновленный словарь подстановок или None, если унификация невозможна.
     """
-    if var in substitutions:
-        # Если переменная уже есть в подстановках, проверяем совместимость
-        return unify(substitutions[var], expr, substitutions)
-    elif isinstance(expr, Variable) and expr in substitutions:
-        # Если выражение переменная и есть в подстановках
-        return unify(var, substitutions[expr], substitutions)
-    elif occurs_check(var, expr):
-        # Проверка на циклы
-        return None
-    else:
-        # Добавляем подстановку
+    if var in substitutions:  # Если переменная уже в подстановках
+        if substitutions[var] == expr:
+            return substitutions  # Подстановка совпадает
+        else:
+            return None  # Конфликт подстановок
+
+    if isinstance(expr, Variable) or isinstance(expr, Negation):  # Замена переменной на другую переменную или ее отрицание
+        for key, value in substitutions.items():
+            if value == var:  # Если переменная уже была заменена на другую
+                substitutions[key] = expr  # Обновляем замену
         substitutions[var] = expr
         return substitutions
+
+    # Если выражение не переменная, отказываемся от унификации
+    return None
 
 
 def occurs_check(var: Variable, expr: Expression) -> bool:
