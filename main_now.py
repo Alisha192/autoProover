@@ -235,6 +235,15 @@ def parse(tokens):
     len(tokens) == 1 and not any([c.isupper() for c in tokens[0]]):
     return Variable(tokens[0])
 
+  if tokens[0] == '(':
+    if tokens[-1] != ')':
+      raise InvalidInputError('Missing \')\'.')
+    if len(tokens) == 2:
+      raise InvalidInputError('Missing formula in parenthetical group.')
+    return parse(tokens[1:-1])
+
+  raise InvalidInputError('Unable to parse: %s...' % tokens[0])
+
 
 def typecheck_term(term):
   if isinstance(term, Variable):
