@@ -202,7 +202,7 @@ def unify_variable(var: Variable, expr: Expression, substitutions: dict):
         else:
             return None  # Конфликт подстановок
 
-    if isinstance(expr, Variable) or isinstance(expr, Negation):  # Замена переменной на другую переменную или ее отрицание
+    if isinstance(expr, Variable):  # Замена переменной на другую переменную или ее отрицание
         for key, value in substitutions.items():
             if value == var:  # Если переменная уже была заменена на другую
                 substitutions[key] = expr  # Обновляем замену

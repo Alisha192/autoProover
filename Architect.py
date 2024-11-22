@@ -71,9 +71,7 @@ class Negation(Expression):
         self.expr = expr
 
     def to_string(self) -> str:
-        if isinstance(self.expr, Variable):
-            return f"¬{self.expr.to_string()}"
-        return f"¬({self.expr.to_string()})"
+        return f"¬{self.expr.to_string()}"
 
     def __str__(self):
         return self.to_string()
