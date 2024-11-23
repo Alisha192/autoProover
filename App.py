@@ -1,5 +1,6 @@
 from Parser import *
 from Prover import *
+from time import time
 
 
 class App:
@@ -51,10 +52,13 @@ class App:
                     expression_str = parts[1]
                     parser = Parser(expression_str, self.keywords)
                     expression = parser.parse()
+                    start_time = time()
                     prover = Prover(self.axioms, expression)
                     result = prover.prove()
+                    end_time = time()
                     if result:
                         print(f"Выражение {expression} успешно доказано :)")
+                        print(f"Время работы программы: {end_time - start_time} s")
                         print()
                         continue
                     else:
