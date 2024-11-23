@@ -15,7 +15,6 @@ class Prover:
         self.unification()
         self.sequent = Sequent({condition: 0 for condition in self.conditions},
                                {self.to_prove: 0},
-                               None,
                                0)
 
     def unification(self):
@@ -26,9 +25,9 @@ class Prover:
                 self.conditions[i] = apply_substitutions(self.conditions[i], substitutions)
 
     def prove(self):
+        """Доказательство строится на основе создания дерева секвентов"""
         if self.sequent is None:
             return False
-        """Доказательство строится на основе создания дерева секвентов"""
         # Списки для хранения секвенции, которые нужно проверить и те, что уже доказаны
         frontier = [self.sequent]  # Секвенты для проверки
         proven = {self.sequent}  # Секвенты, которые уже доказаны
@@ -85,10 +84,12 @@ class Prover:
                 # Применение левого правила
                 if apply_left:
                     if isinstance(left_expression, Negation):
+                        print(f"Перебрасываем левую часть {left_expression} в право:")
                         new_sequent = remove_left_negation(old_sequent, left_expression)
                         frontier.append(new_sequent)  # Добавляем новый секвент в frontier
                         break
                     if isinstance(left_expression, Implication):
+                        print(f"Применение modus ponens к выражению {left_expression}:")
                         new_sequents = modus_ponens(old_sequent, left_expression)
                         frontier.extend(new_sequents)  # Добавляем новые секвенты в frontier
                         break
@@ -96,10 +97,12 @@ class Prover:
                 # Применение правого правила
                 if apply_right:
                     if isinstance(right_expression, Negation):
+                        print(f"Перебрасываем правую часть {right_expression} в левую:")
                         new_sequent = remove_right_negation(old_sequent, right_expression)
                         frontier.append(new_sequent)  # Добавляем новый секвент в frontier
                         break
                     if isinstance(right_expression, Implication):
+                        print(f"Применяем теорему о дедукции к выражению {right_expression}:")
                         new_sequent = deduction(old_sequent, right_expression)
                         frontier.append(new_sequent)  # Добавляем новый секвент в frontier
                         break

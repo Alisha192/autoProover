@@ -122,8 +122,9 @@ class Xor(Expression):
         return isinstance(other, Xor) and self.left.__eq__(other.left) and self.right.__eq__(other.right)
 
     def to_implication_form(self) -> Expression:
-        return Or(And(Negation(self.left), self.right).to_implication_form(),
-                  And(self.left, Negation(self.right)).to_implication_form())
+        return Implication(
+            Implication(Negation(self.left.to_implication_form()), Negation(self.right.to_implication_form())),
+            Negation(Implication(self.left.to_implication_form(), self.right.to_implication_form())))
 
     def __hash__(self):
         return hash(str(self))
@@ -145,9 +146,9 @@ class Equivalence(Expression):
 
     def to_implication_form(self) -> Expression:
         return And(
-                Implication(self.left.to_implication_form(), self.right.to_implication_form()),
-                Implication(self.right.to_implication_form(), self.left.to_implication_form())
-            ).to_implication_form()
+            Implication(self.left.to_implication_form(), self.right.to_implication_form()),
+            Implication(self.right.to_implication_form(), self.left.to_implication_form())
+        ).to_implication_form()
 
     def __hash__(self):
         return hash(str(self))

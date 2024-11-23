@@ -2,18 +2,16 @@ from Architect import *
 
 
 class Sequent:
-    def __init__(self, left: dict, right: dict, siblings, depth: int):
+    def __init__(self, left: dict, right: dict, depth: int):
         """
         Инициализация секвента.
 
         :param left: Левые формулы секвента (обычно предпосылки).
         :param right: Правые формулы секвента (обычно вывод).
-        :param siblings: Соседние секванты (доказанные секвенты, которые связаны с этим).
         :param depth: Глубина секвента в дереве доказательства.
         """
         self.left = left  # Хранит формулы слева от знака вывода
         self.right = right  # Хранит формулы справа от знака вывода
-        self.siblings = siblings  # Хранит соседние секванты
         self.depth = depth  # Глубина текущего секвента
 
     def __eq__(self, other):
@@ -70,7 +68,6 @@ def deduction(sequent, expression):
     new_sequent = Sequent(
         sequent.left.copy(),
         sequent.right.copy(),
-        sequent.siblings,
         sequent.depth + 1
     )
     del new_sequent.right[expression]
@@ -88,24 +85,17 @@ def modus_ponens(sequent, expression):
     new_sequent_a = Sequent(
         sequent.left.copy(),
         sequent.right.copy(),
-        sequent.siblings,
         sequent.depth + 1
     )
     new_sequent_b = Sequent(
         sequent.left.copy(),
         sequent.right.copy(),
-        sequent.siblings,
         sequent.depth + 1
     )
     del new_sequent_a.left[expression]
     del new_sequent_b.left[expression]
     new_sequent_a.right[expression.left] = sequent.left[expression] + 1
     new_sequent_b.left[expression.right] = sequent.left[expression] + 1
-
-    if new_sequent_a.siblings is not None:
-        new_sequent_a.siblings.add(new_sequent_a)
-    if new_sequent_b.siblings is not None:
-        new_sequent_b.siblings.add(new_sequent_b)
 
     return [new_sequent_a, new_sequent_b]
 
@@ -117,7 +107,6 @@ def remove_left_negation(sequent, expression):
     new_sequent = Sequent(
         sequent.left.copy(),
         sequent.right.copy(),
-        sequent.siblings,
         sequent.depth + 1
     )
     del new_sequent.left[expression]
@@ -132,7 +121,6 @@ def remove_right_negation(sequent, expression):
     new_sequent = Sequent(
         sequent.left.copy(),
         sequent.right.copy(),
-        sequent.siblings,
         sequent.depth + 1
     )
     del new_sequent.right[expression]
